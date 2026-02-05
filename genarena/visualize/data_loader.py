@@ -2333,3 +2333,98 @@ class HFArenaDataLoader(ArenaDataLoader):
         """
         # Return None to indicate image should be fetched via CDN
         return None
+
+    def _get_available_models_for_subset(self, subset: str) -> list[str]:
+        """
+        Get list of models that have images in the HF CDN for this subset.
+
+        Returns:
+            List of model names
+        """
+        models = set()
+        for (s, model, _) in self._image_url_index.keys():
+            if s == subset:
+                models.add(model)
+        return sorted(models)
+
+    def _has_model_image(self, subset: str, model: str, sample_index: int) -> bool:
+        """
+        Check if a model has an image for a specific sample in the HF CDN.
+
+        Args:
+            subset: Subset name
+            model: Model name
+            sample_index: Sample index
+
+        Returns:
+            True if image exists in CDN index
+        """
+        return (subset, model, sample_index) in self._image_url_index
+
+    def get_sample_all_models(
+        self, subset: str, exp_name: str, sample_index: int,
+        filter_models: Optional[list[str]] = None,
+        stats_scope: str = "filtered"
+    ) -> dict[str, Any]:
+        """
+        Get all model outputs for a specific sample, sorted by win rate.
+
+        Override for HF deployment to use CDN image index instead of local files.
+
+        Args:
+            subset: Subset name
+            exp_name: Experiment name
+            sample_index: Sample index
+            filter_models: Optional list of models to filter (show only these models)
+            stats_scope: 'filtered' = only count battles between filtered models,
+                        'all' = count all battles (but show only filtered models)
+
+        Returns:
+            Dict with sample info and all model outputs sorted by win rate
+        """
+        # Get sample metadata
+        sample_meta = self._get_sample_data(subset, sample_index)
+
+        # Determine which models to use for stats calculation
+        stats_filter = filter_models if stats_scope == "filtered" else None
+        model_stats = self.get_model_win_stats(subset, exp_name, sample_index, stats_filter)
+
+        # Get all models that have outputs in CDN
+        available_models_list = self._get_available_models_for_subset(subset)
+
+        # Apply filter if specified
+        if filter_models:
+            filter_set = set(filter_models)
+            available_models_list = [m for m in available_models_list if m in filter_set]
+
+        # Build model info for models that have images for this sample
+        available_models = []
+        for model in available_models_list:
+            # Check if model has image for this sample in CDN index
+            if self._has_model_image(subset, model, sample_index):
+                stats = model_stats.get(model, {
+                    "wins": 0, "losses": 0, "ties": 0, "total": 0, "win_rate": 0
+                })
+                available_models.append({
+                    "model": model,
+                    "wins": stats["wins"],
+                    "losses": stats["losses"],
+                    "ties": stats["ties"],
+                    "total": stats["total"],
+                    "win_rate": stats["win_rate"],
+                })
+
+        # Sort by win rate (descending), then by wins (descending), then by model name
+        available_models.sort(key=lambda x: (-x["win_rate"], -x["wins"], x["model"]))
+
+        return {
+            "subset": subset,
+            "exp_name": exp_name,
+            "sample_index": sample_index,
+            "instruction": sample_meta.get("instruction", ""),
+            "task_type": sample_meta.get("task_type", ""),
+            "input_image_count": sample_meta.get("input_image_count", 1),
+            "prompt_source": sample_meta.get("prompt_source"),
+            "original_metadata": sample_meta.get("original_metadata"),
+            "models": available_models,
+        }

@@ -7,11 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project files
-COPY . .
-
 # Install Python dependencies
-RUN pip install --no-cache-dir -e .[web]
+RUN pip install genarena[web]
 
 # Download parquet benchmark data from HuggingFace
 # This dataset contains the prompt/benchmark data (not arena battle results)
@@ -22,4 +19,4 @@ RUN python -c "from huggingface_hub import snapshot_download; snapshot_download(
 EXPOSE 7860
 
 # Start the application
-CMD ["python", "genarena/deploy/app.py"]
+CMD ["python", "-m", "genarena.deploy.app"]

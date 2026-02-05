@@ -1,6 +1,6 @@
 [project]
 name = "genarena"
-version = "0.1.0"
+version = "0.1.1"
 description = "GenArena Arena Evaluation - VLM-based pairwise image generation evaluation"
 readme = "README.md"
 requires-python = ">=3.10"
