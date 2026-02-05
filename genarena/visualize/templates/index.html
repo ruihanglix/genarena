@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenArena Explorer</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1 class="logo" id="logo-link" title="Back to Overview">GenArena</h1>
+                <nav class="header-nav">
+                    <a id="nav-overview" class="nav-link active" title="All Subsets Overview">Overview</a>
+                    <a id="nav-gallery" class="nav-link" title="Browse Battles">Gallery</a>
+                    <span class="nav-separator">|</span>
+                    <a href="#" class="nav-link nav-external" target="_blank" rel="noopener noreferrer" title="Project Page">Project Page <span class="external-icon">↗</span></a>
+                    <a href="#" class="nav-link nav-external" target="_blank" rel="noopener noreferrer" title="arXiv Paper">arXiv <span class="external-icon">↗</span></a>
+                    <a href="#" class="nav-link nav-external" target="_blank" rel="noopener noreferrer" title="GitHub Repository">GitHub <span class="external-icon">↗</span></a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <button id="favorites-btn" class="btn-header-action" title="View Favorites">
+                    <span class="header-action-icon">★</span>
+                    <span id="favorites-count" class="header-action-count">0</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-container">
+            <!-- Overview Page (default landing) -->
+            <div id="overview-page" class="full-page">
+                <div class="page-header">
+                    <h2>All Subsets Leaderboard</h2>
+                    <button id="cross-subset-btn" class="btn btn-secondary">Cross-Subset</button>
+                </div>
+                <p class="page-description">ELO rankings across all evaluation subsets. Click on a subset column header to view details, or click a model row to see its performance.</p>
+                <div id="overview-content" class="overview-content">
+                    <div class="loading">Loading leaderboards...</div>
+                </div>
+            </div>
+
+            <!-- Gallery Page (with sidebar) -->
+            <div id="gallery-page" class="gallery-page-container" style="display: none;">
+                <!-- Sidebar Filters -->
+                <aside class="sidebar">
+                <div class="filter-section">
+                    <h3>Filters</h3>
+
+                    <!-- Model filter - only visible in battles view -->
+                    <div class="filter-group battles-only">
+                        <label>Models: <span id="model-count">(0 selected)</span></label>
+                        <div id="model-checkboxes" class="checkbox-group">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                        <div class="checkbox-actions">
+                            <button id="select-all-models" class="btn btn-small">Select All</button>
+                            <button id="clear-all-models" class="btn btn-small">Clear All</button>
+                        </div>
+                    </div>
+
+                    <div class="filter-group battles-only" id="result-filter-group" style="display: none;">
+                        <label for="result-filter">Result (single model only):</label>
+                        <select id="result-filter" class="filter-select">
+                            <option value="">All results</option>
+                            <option value="wins">Wins</option>
+                            <option value="losses">Losses</option>
+                            <option value="ties">Ties</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group battles-only">
+                        <label for="consistency-filter">Consistency:</label>
+                        <select id="consistency-filter" class="filter-select">
+                            <option value="">All</option>
+                            <option value="true">Consistent</option>
+                            <option value="false">Inconsistent</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group" id="prompt-source-filter-group" style="display: none;">
+                        <label for="prompt-source-filter">Prompt Source:</label>
+                        <select id="prompt-source-filter" class="filter-select">
+                            <option value="">All sources</option>
+                        </select>
+                    </div>
+
+                    <!-- Model filter for prompts view -->
+                    <div class="filter-group prompts-only" id="prompts-model-filter-group" style="display: none;">
+                        <label>Filter Models: <span id="prompts-model-count">(0 selected)</span></label>
+                        <div id="prompts-model-checkboxes" class="checkbox-group">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                        <div class="checkbox-actions">
+                            <button id="prompts-select-all-models" class="btn btn-small">Select All</button>
+                            <button id="prompts-clear-all-models" class="btn btn-small">Clear All</button>
+                        </div>
+                        <button id="prompts-apply-model-filter" class="btn btn-primary btn-small" style="width: 100%; margin-top: 8px;">Apply Filter</button>
+                        <p class="filter-hint">Show only selected models and their battles</p>
+                    </div>
+
+                    <div class="filter-group" id="image-count-filter-group" style="display: none;">
+                        <label>Input Images: <span id="image-range-display">1-1</span></label>
+                        <div class="range-slider-container">
+                            <input type="range" id="min-images-slider" class="range-slider" min="1" max="10" value="1">
+                            <input type="range" id="max-images-slider" class="range-slider" min="1" max="10" value="10">
+                        </div>
+                        <div class="range-labels">
+                            <span id="min-images-label">1</span>
+                            <span id="max-images-label">10</span>
+                        </div>
+                    </div>
+
+                    <button id="apply-filters" class="btn btn-primary">Apply Filters</button>
+                    <button id="clear-filters" class="btn btn-secondary">Clear</button>
+                </div>
+
+                <div class="stats-section">
+                    <h3>Statistics</h3>
+                    <div id="stats-panel">
+                        <p class="placeholder">Select a subset and experiment</p>
+                    </div>
+                </div>
+
+                <div class="h2h-section" id="h2h-section" style="display: none;">
+                    <h3>Head-to-Head</h3>
+                    <div id="h2h-panel">
+                        <!-- Filled by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- ELO Leaderboard Section -->
+                <div class="elo-section" id="elo-section">
+                    <div class="elo-header">
+                        <h3>ELO Leaderboard</h3>
+                        <button id="view-full-leaderboard" class="btn btn-small btn-link" title="View Full Leaderboard">
+                            View All →
+                        </button>
+                    </div>
+                    <div id="elo-panel">
+                        <p class="placeholder">Select a subset to view rankings</p>
+                    </div>
+                    <div class="elo-actions">
+                        <button id="view-matrix" class="btn btn-small btn-secondary" title="View Win Rate Matrix">Matrix</button>
+                        <button id="view-elo-history" class="btn btn-small btn-secondary" title="View ELO History">History</button>
+                        <button id="view-elo-by-source" class="btn btn-small btn-secondary" title="View ELO by Source">By Source</button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Battle List -->
+            <main class="content">
+                <!-- Gallery Controls -->
+                <div class="gallery-controls">
+                    <div class="selector-group">
+                        <label for="subset-select">Subset:</label>
+                        <select id="subset-select" class="selector">
+                            <option value="">Select subset...</option>
+                        </select>
+                    </div>
+                    <div class="selector-group">
+                        <label for="exp-select">Experiment:</label>
+                        <select id="exp-select" class="selector" disabled>
+                            <option value="">Select experiment...</option>
+                        </select>
+                    </div>
+                    <div class="view-toggle">
+                        <button id="view-battles" class="view-btn active" title="View Battles">
+                            <span class="view-icon">⚔️</span>
+                            <span>Battles</span>
+                        </button>
+                        <button id="view-prompts" class="view-btn" title="View by Prompt">
+                            <span class="view-icon">📝</span>
+                            <span>Prompts</span>
+                        </button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="search-input" class="search-input" placeholder="Search prompts..." title="Search by instruction, task type, or metadata">
+                        <button id="search-btn" class="btn btn-small search-btn" title="Search">🔍</button>
+                        <button id="clear-search-btn" class="btn btn-small clear-search-btn" title="Clear search" style="display: none;">✕</button>
+                    </div>
+                </div>
+
+                <div class="content-header">
+                    <div id="pagination-info" class="pagination-info"></div>
+                    <div class="pagination-controls">
+                        <button id="first-page" class="btn btn-small" disabled>&laquo;</button>
+                        <button id="prev-page" class="btn btn-small" disabled>&lt;</button>
+                        <div id="page-numbers" class="page-numbers">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                        <button id="next-page" class="btn btn-small" disabled>&gt;</button>
+                        <button id="last-page" class="btn btn-small" disabled>&raquo;</button>
+                        <div class="page-jump">
+                            <input type="number" id="page-input" class="page-input" min="1" placeholder="Page">
+                            <button id="page-go" class="btn btn-small">Go</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="battle-list" class="battle-list">
+                    <div class="empty-state">
+                        <p>Select a subset and experiment to view battles</p>
+                    </div>
+                </div>
+
+                <!-- Prompts View Container -->
+                <div id="prompts-list" class="prompts-list" style="display: none;">
+                    <div class="empty-state">
+                        <p>Select a subset and experiment to view prompts</p>
+                    </div>
+                </div>
+
+                <div class="content-footer">
+                    <div class="pagination-controls">
+                        <button id="first-page-bottom" class="btn btn-small" disabled>&laquo;</button>
+                        <button id="prev-page-bottom" class="btn btn-small" disabled>&lt;</button>
+                        <div id="page-numbers-bottom" class="page-numbers">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                        <button id="next-page-bottom" class="btn btn-small" disabled>&gt;</button>
+                        <button id="last-page-bottom" class="btn btn-small" disabled>&raquo;</button>
+                        <div class="page-jump">
+                            <input type="number" id="page-input-bottom" class="page-input" min="1" placeholder="Page">
+                            <button id="page-go-bottom" class="btn btn-small">Go</button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+            </div> <!-- End of gallery-page -->
+        </div>
+
+        <!-- Detail Modal -->
+        <div id="detail-modal" class="modal hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content">
+                <button class="modal-close">&times;</button>
+                <div id="detail-content">
+                    <!-- Filled by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Favorites Modal -->
+        <div id="favorites-modal" class="modal hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content modal-content-wide">
+                <button class="modal-close">&times;</button>
+                <div class="favorites-modal-header">
+                    <h2>Favorite Prompts</h2>
+                    <button id="clear-all-favorites" class="btn btn-secondary btn-small">Clear All</button>
+                </div>
+                <div id="favorites-scrollable" class="favorites-scrollable">
+                    <!-- Favorites Model Filter - horizontal layout -->
+                    <div class="favorites-model-filter" id="favorites-model-filter-group">
+                        <label>Filter Models:</label>
+                        <div id="favorites-model-checkboxes" class="checkbox-group-horizontal">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                        <div class="filter-controls-row">
+                            <div class="checkbox-actions-inline">
+                                <button id="favorites-select-all-models" class="btn btn-small">Select All</button>
+                                <button id="favorites-clear-all-models" class="btn btn-small">Clear All</button>
+                                <button id="favorites-apply-model-filter" class="btn btn-primary btn-small">Apply Filter</button>
+                            </div>
+                            <div class="stats-scope-toggle">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="favorites-stats-scope-all">
+                                    <span class="toggle-text">Win rate includes all opponents</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="favorites-content">
+                        <!-- Filled by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image Lightbox -->
+        <div id="lightbox" class="lightbox">
+            <button class="lightbox-close">&times;</button>
+            <img id="lightbox-img" src="" alt="Enlarged image">
+            <div id="lightbox-label" class="lightbox-label"></div>
+        </div>
+
+        <!-- ELO Leaderboard Modal -->
+        <div id="leaderboard-modal" class="modal hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content modal-content-wide">
+                <button class="modal-close">&times;</button>
+                <div class="leaderboard-modal-header">
+                    <h2>ELO Leaderboard</h2>
+                    <span id="leaderboard-subset-name" class="subset-badge"></span>
+                </div>
+                <div id="leaderboard-content">
+                    <!-- Filled by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Stats Modal -->
+        <div id="model-stats-modal" class="modal hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content modal-content-wide">
+                <button class="modal-close">&times;</button>
+                <div id="model-stats-content">
+                    <!-- Filled by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Win Rate Matrix Modal -->
+        <div id="matrix-modal" class="modal hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content modal-content-wide">
+                <button class="modal-close">&times;</button>
+                <div class="matrix-modal-header">
+                    <h2>Win Rate Matrix</h2>
+                    <span id="matrix-subset-name" class="subset-badge"></span>
+                </div>
+                <div id="matrix-content" class="matrix-content">
+                    <!-- Filled by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ELO History Modal -->
+        <div id="elo-history-modal" class="modal hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content modal-content-wide">
+                <button class="modal-close">&times;</button>
+                <div class="elo-history-header">
+                    <h2>ELO History</h2>
+                    <div class="elo-history-controls">
+                        <label for="elo-history-granularity">Group by:</label>
+                        <select id="elo-history-granularity" class="selector">
+                            <option value="experiment" selected>Experiment</option>
+                            <option value="day">Day</option>
+                            <option value="week">Week</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="elo-history-content" class="elo-history-content">
+                    <!-- Filled by JavaScript - SVG chart -->
+                </div>
+                <div id="elo-history-legend" class="elo-history-legend">
+                    <!-- Filled by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ELO by Source Modal -->
+        <div id="elo-by-source-modal" class="modal hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content modal-content-wide">
+                <button class="modal-close">&times;</button>
+                <div class="elo-by-source-header">
+                    <h2>ELO Rankings by Prompt Source</h2>
+                    <span id="elo-by-source-subset-name" class="subset-badge"></span>
+                </div>
+                <div id="elo-by-source-content" class="elo-by-source-content">
+                    <!-- Filled by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Cross-Subset Modal -->
+        <div id="cross-subset-modal" class="modal hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content modal-content-wide">
+                <button class="modal-close">&times;</button>
+                <div class="cross-subset-modal-header">
+                    <h2>Cross-Subset ELO Analysis</h2>
+                </div>
+                <p class="modal-description">Merge battles from multiple subsets to compute combined ELO rankings.</p>
+                <div class="cross-subset-content">
+                    <div class="cross-subset-selection">
+                        <h4>Select subsets to merge:</h4>
+                        <div id="cross-subset-checkboxes" class="checkbox-group">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                        <div class="checkbox-actions">
+                            <button id="cross-subset-select-all" class="btn btn-small">Select All</button>
+                            <button id="cross-subset-clear-all" class="btn btn-small">Clear All</button>
+                        </div>
+                    </div>
+                    <div class="cross-subset-info">
+                        <p>Common models (in all selected): <span id="common-model-count">-</span></p>
+                        <p>Union models (in any selected): <span id="union-model-count">-</span></p>
+                        <p>Total battles: <span id="total-battles-count">-</span></p>
+                    </div>
+                    <div class="cross-subset-options">
+                        <label>Model scope:</label>
+                        <label class="radio-label"><input type="radio" name="model-scope" value="all" checked> All models</label>
+                        <label class="radio-label"><input type="radio" name="model-scope" value="common"> Common only</label>
+                    </div>
+                    <button id="calculate-merged-elo" class="btn btn-primary">Calculate Merged ELO</button>
+                </div>
+                <div id="cross-subset-results" class="cross-subset-results">
+                    <!-- Filled by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/app.js"></script>
+</body>
+</html>

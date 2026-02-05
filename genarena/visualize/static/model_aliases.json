@@ -1,0 +1,86 @@
+{
+  "gpt_image_1.5": {
+    "alias": "GPT-Image-1.5",
+    "link": "#"
+  },
+  "qwen-image-edit-2511_PE": {
+    "alias": "Qwen-Image-Edit-2511 + PE",
+    "link": "#"
+  },
+  "qwen-image-edit-2511": {
+    "alias": "Qwen-Image-Edit-2511",
+    "link": "#"
+  },
+  "nanobanana": {
+    "alias": "Nano Banana",
+    "link": "#"
+  },
+  "flux2_klein_9b": {
+    "alias": "FLUX.2 [klein] 9B",
+    "link": "#"
+  },
+  "qwen-image-edit-2509_PE": {
+    "alias": "Qwen-Image-Edit-2509 + PE",
+    "link": "#"
+  },
+  "longcat_image_edit": {
+    "alias": "LongCat-Image-Edit",
+    "link": "#"
+  },
+  "emu35": {
+    "alias": "Emu3.5",
+    "link": "#"
+  },
+  "qwen-image-edit-2509": {
+    "alias": "Qwen-Image-Edit-2509",
+    "link": "#"
+  },
+  "gpt_image_1": {
+    "alias": "GPT-Image-1",
+    "link": "#"
+  },
+  "flux2_pe": {
+    "alias": "FLUX.2 [dev] + PE",
+    "link": "#"
+  },
+  "flux2": {
+    "alias": "FLUX.2 [dev]",
+    "link": "#"
+  },
+  "flux2_klein_4b": {
+    "alias": "FLUX.2 [klein] 4B",
+    "link": "#"
+  },
+  "qwen-image-edit": {
+    "alias": "Qwen-Image-Edit",
+    "link": "#"
+  },
+  "flux1_kontext": {
+    "alias": "FLUX.1 [kontext]",
+    "link": "#"
+  },
+  "bagel": {
+    "alias": "Bagel",
+    "link": "#"
+  },
+  "glm_image": {
+    "alias": "GLM-Image",
+    "link": "#"
+  },
+  "step1x_edit": {
+    "alias": "Step1x-Edit",
+    "link": "#"
+  },
+  "dreamomni2": {
+    "alias": "DreamOmni2",
+    "link": "#"
+  },
+  "hunyuanimage3_ins_distill": {
+    "alias": "HunyuanImage-3.0-Instruct-Distill",
+    "link": "#"
+  },
+  "hunyuanimage3_ins": {
+    "alias": "HunyuanImage-3.0-Instruct",
+    "link": "#"
+  }
+}

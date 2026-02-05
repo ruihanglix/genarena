@@ -1,0 +1,48 @@
+[project]
+name = "genarena"
+version = "0.1.0"
+description = "GenArena Arena Evaluation - VLM-based pairwise image generation evaluation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "GenArena Team" }
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "openai>=1.0.0",
+    "pyarrow>=12.0.0",
+    "pandas>=2.0.0",
+    "Pillow>=9.0.0",
+    "json_repair>=0.25.0",
+    "tqdm>=4.65.0",
+    "huggingface_hub>=0.20.0",
+    "datasets>=2.0.0",
+]
+
+[project.optional-dependencies]
+web = [
+    "flask>=2.0.0",
+]
+
+[project.scripts]
+genarena = "genarena.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["genarena"]
+
+[tool.uv]
+dev-dependencies = []
