@@ -2267,14 +2267,15 @@ class HFArenaDataLoader(ArenaDataLoader):
             preload: If True, preload all data at initialization
         """
         self.hf_repo = hf_repo
-        self._image_url_index = self._build_image_index(image_files)
+        # Build both indexes at once
+        self._image_url_index, self._subset_models_index = self._build_image_index(image_files)
         super().__init__(arena_dir, data_dir, preload=preload)
 
     def _build_image_index(
         self, image_files: list[str]
-    ) -> dict[tuple[str, str, int], str]:
+    ) -> tuple[dict[tuple[str, str, int], str], dict[str, list[str]]]:
         """
-        Build index: (subset, model, sample_index) -> hf_file_path
+        Build indexes from HF image file list.
 
         Expected path format: {subset}/models/{exp_name}/{model}/{index}.png
 
@@ -2282,11 +2283,14 @@ class HFArenaDataLoader(ArenaDataLoader):
             image_files: List of image file paths from HF repo
 
         Returns:
-            Dict mapping (subset, model, sample_index) to HF file path
+            Tuple of:
+            - Dict mapping (subset, model, sample_index) to HF file path
+            - Dict mapping subset to sorted list of model names
         """
         from genarena.models import parse_image_index
 
         index: dict[tuple[str, str, int], str] = {}
+        subset_models: dict[str, set[str]] = {}
 
         for path in image_files:
             parts = path.split("/")
@@ -2300,9 +2304,18 @@ class HFArenaDataLoader(ArenaDataLoader):
                 if idx is not None:
                     # If duplicate, later entries overwrite earlier ones
                     index[(subset, model, idx)] = path
+                    # Also track subset -> models mapping
+                    if subset not in subset_models:
+                        subset_models[subset] = set()
+                    subset_models[subset].add(model)
 
-        logger.info(f"Built image URL index with {len(index)} entries")
-        return index
+        # Convert sets to sorted lists
+        subset_models_sorted: dict[str, list[str]] = {
+            subset: sorted(models) for subset, models in subset_models.items()
+        }
+
+        logger.info(f"Built image URL index with {len(index)} entries across {len(subset_models_sorted)} subsets")
+        return index, subset_models_sorted
 
     def get_model_image_url(
         self, subset: str, model: str, sample_index: int
@@ -2338,14 +2351,12 @@ class HFArenaDataLoader(ArenaDataLoader):
         """
         Get list of models that have images in the HF CDN for this subset.
 
+        Uses pre-built index for O(1) lookup.
+
         Returns:
-            List of model names
+            List of model names (sorted)
         """
-        models = set()
-        for (s, model, _) in self._image_url_index.keys():
-            if s == subset:
-                models.add(model)
-        return sorted(models)
+        return self._subset_models_index.get(subset, [])
 
     def _has_model_image(self, subset: str, model: str, sample_index: int) -> bool:
         """
@@ -2360,6 +2371,69 @@ class HFArenaDataLoader(ArenaDataLoader):
             True if image exists in CDN index
         """
         return (subset, model, sample_index) in self._image_url_index
+
+    def get_subset_info(self, subset: str) -> Optional[SubsetInfo]:
+        """
+        Get information about a subset.
+
+        Override for HF deployment to use CDN image index for models list.
+
+        Args:
+            subset: Subset name
+
+        Returns:
+            SubsetInfo or None if subset doesn't exist
+        """
+        if subset in self._subset_info_cache:
+            return self._subset_info_cache[subset]
+
+        subset_path = os.path.join(self.arena_dir, subset)
+        if not os.path.isdir(subset_path):
+            return None
+
+        # Get models from CDN index instead of local file system
+        models = self._get_available_models_for_subset(subset)
+
+        # Get experiments
+        pk_logs_dir = os.path.join(subset_path, "pk_logs")
+        experiments = []
+        if os.path.isdir(pk_logs_dir):
+            for name in os.listdir(pk_logs_dir):
+                exp_path = os.path.join(pk_logs_dir, name)
+                if os.path.isdir(exp_path):
+                    # Check for battle logs
+                    has_logs = any(
+                        f.endswith(".jsonl")
+                        for f in os.listdir(exp_path)
+                        if os.path.isfile(os.path.join(exp_path, f))
+                    )
+                    if has_logs:
+                        experiments.append(name)
+        experiments.sort()
+
+        # Load state
+        state_path = os.path.join(subset_path, "arena", "state.json")
+        state = load_state(state_path)
+
+        # Get image count range
+        img_range = self._image_count_range.get(subset, (1, 1))
+
+        # Get prompt sources
+        prompt_sources = self._prompt_sources.get(subset, [])
+
+        info = SubsetInfo(
+            name=subset,
+            models=models,
+            experiments=experiments,
+            total_battles=state.total_battles,
+            state=state,
+            min_input_images=img_range[0],
+            max_input_images=img_range[1],
+            prompt_sources=prompt_sources,
+        )
+
+        self._subset_info_cache[subset] = info
+        return info
 
     def get_sample_all_models(
         self, subset: str, exp_name: str, sample_index: int,
@@ -2389,7 +2463,7 @@ class HFArenaDataLoader(ArenaDataLoader):
         stats_filter = filter_models if stats_scope == "filtered" else None
         model_stats = self.get_model_win_stats(subset, exp_name, sample_index, stats_filter)
 
-        # Get all models that have outputs in CDN
+        # Get all models that have outputs in CDN (O(1) lookup)
         available_models_list = self._get_available_models_for_subset(subset)
 
         # Apply filter if specified
