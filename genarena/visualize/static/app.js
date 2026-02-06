@@ -94,8 +94,12 @@ function truncateMiddle(str, maxLen) {
     if (maxLen <= 0 || str.length <= maxLen) return str;
     const ellipsis = '...';
     const charsToShow = maxLen - ellipsis.length;
+    if (charsToShow <= 0) return ellipsis;
     const frontChars = Math.ceil(charsToShow / 2);
     const backChars = Math.floor(charsToShow / 2);
+    if (backChars === 0) {
+        return str.slice(0, frontChars) + ellipsis;
+    }
     return str.slice(0, frontChars) + ellipsis + str.slice(-backChars);
 }
 
