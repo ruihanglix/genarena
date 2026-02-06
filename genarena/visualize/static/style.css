@@ -4252,11 +4252,7 @@ body {
     }
     
     .header-nav .nav-separator {
-        display: block;
-        width: 100%;
-        height: 1px;
-        background: var(--border-color);
-        margin: 12px 0;
+        display: none;
     }
     
     .header-nav .nav-link.nav-external {
