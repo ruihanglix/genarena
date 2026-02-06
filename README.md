@@ -2,7 +2,7 @@
 
 A unified evaluation framework for visual generation tasks using VLM-based pairwise comparison and Elo ranking.
 
-[![arXiv](https://img.shields.io/badge/arXiv-2602.XXXXX-b31b1b.svg)](https://arxiv.org/abs/2602.XXXXX)
+[![arXiv](https://img.shields.io/badge/arXiv-2602.06013-b31b1b.svg)](https://arxiv.org/abs/2602.06013)
 [![Project Page](https://img.shields.io/badge/Project-Website-orange)](https://genarena.github.io)
 [![Leaderboard](https://img.shields.io/badge/%F0%9F%8F%86%20Leaderboard-Live-brightgreen)](https://huggingface.co/spaces/genarena/leaderboard)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-GenArena-yellow)](https://huggingface.co/datasets/rhli/genarena)
