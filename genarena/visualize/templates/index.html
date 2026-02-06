@@ -11,8 +11,11 @@
         <!-- Header -->
         <header class="header">
             <div class="header-left">
+                <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle menu">
+                    <span class="hamburger-icon"></span>
+                </button>
                 <h1 class="logo" id="logo-link" title="Back to Overview">GenArena</h1>
-                <nav class="header-nav">
+                <nav class="header-nav" id="header-nav">
                     <a id="nav-overview" class="nav-link active" title="All Subsets Overview">Overview</a>
                     <a id="nav-gallery" class="nav-link" title="Browse Battles">Gallery</a>
                     <span class="nav-separator">|</span>
@@ -28,6 +31,8 @@
                 </button>
             </div>
         </header>
+        <!-- Mobile Menu Overlay -->
+        <div id="mobile-menu-overlay" class="mobile-menu-overlay"></div>
 
         <!-- Main Content -->
         <div class="main-container">
@@ -45,8 +50,15 @@
 
             <!-- Gallery Page (with sidebar) -->
             <div id="gallery-page" class="gallery-page-container" style="display: none;">
+                <!-- Mobile Sidebar Toggle -->
+                <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle filters">
+                    <span class="filter-icon">☰</span>
+                    <span class="filter-text">Filters</span>
+                </button>
+                <!-- Sidebar Overlay for Mobile -->
+                <div id="sidebar-overlay" class="sidebar-overlay"></div>
                 <!-- Sidebar Filters -->
-                <aside class="sidebar">
+                <aside class="sidebar" id="sidebar">
                 <div class="filter-section">
                     <h3>Filters</h3>
 

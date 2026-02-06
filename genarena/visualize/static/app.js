@@ -3742,6 +3742,278 @@ if (elements.eloHistoryGranularity) {
     elements.eloHistoryGranularity.addEventListener('change', loadEloHistory);
 }
 
+// ========== Mobile Menu and Sidebar Functions ==========
+
+// Mobile menu elements
+const mobileElements = {
+    mobileMenuToggle: document.getElementById('mobile-menu-toggle'),
+    mobileMenuOverlay: document.getElementById('mobile-menu-overlay'),
+    headerNav: document.getElementById('header-nav'),
+    sidebarToggle: document.getElementById('sidebar-toggle'),
+    sidebarOverlay: document.getElementById('sidebar-overlay'),
+    sidebar: document.getElementById('sidebar'),
+};
+
+/**
+ * Toggle mobile navigation menu
+ */
+function toggleMobileMenu() {
+    const isActive = mobileElements.mobileMenuToggle?.classList.toggle('active');
+    mobileElements.headerNav?.classList.toggle('active', isActive);
+    mobileElements.mobileMenuOverlay?.classList.toggle('active', isActive);
+    
+    // Prevent body scroll when menu is open
+    document.body.style.overflow = isActive ? 'hidden' : '';
+}
+
+/**
+ * Close mobile navigation menu
+ */
+function closeMobileMenu() {
+    mobileElements.mobileMenuToggle?.classList.remove('active');
+    mobileElements.headerNav?.classList.remove('active');
+    mobileElements.mobileMenuOverlay?.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+/**
+ * Toggle sidebar drawer (mobile)
+ */
+function toggleSidebar() {
+    const isActive = mobileElements.sidebar?.classList.toggle('active');
+    mobileElements.sidebarOverlay?.classList.toggle('active', isActive);
+    
+    // Prevent body scroll when sidebar is open
+    document.body.style.overflow = isActive ? 'hidden' : '';
+}
+
+/**
+ * Close sidebar drawer
+ */
+function closeSidebar() {
+    mobileElements.sidebar?.classList.remove('active');
+    mobileElements.sidebarOverlay?.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+/**
+ * Check if we're on mobile viewport
+ */
+function isMobileViewport() {
+    return window.innerWidth <= 768;
+}
+
+/**
+ * Handle window resize - close mobile menus if viewport becomes larger
+ */
+function handleResize() {
+    if (!isMobileViewport()) {
+        closeMobileMenu();
+        closeSidebar();
+    }
+}
+
+// Mobile menu event listeners
+if (mobileElements.mobileMenuToggle) {
+    mobileElements.mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+}
+
+if (mobileElements.mobileMenuOverlay) {
+    mobileElements.mobileMenuOverlay.addEventListener('click', closeMobileMenu);
+}
+
+// Close mobile menu when clicking a nav link
+if (mobileElements.headerNav) {
+    mobileElements.headerNav.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            if (isMobileViewport()) {
+                closeMobileMenu();
+            }
+        });
+    });
+}
+
+// Sidebar toggle event listeners
+if (mobileElements.sidebarToggle) {
+    mobileElements.sidebarToggle.addEventListener('click', toggleSidebar);
+}
+
+if (mobileElements.sidebarOverlay) {
+    mobileElements.sidebarOverlay.addEventListener('click', closeSidebar);
+}
+
+// Handle window resize
+window.addEventListener('resize', handleResize);
+
+// ========== Overview Cards (Mobile View) ==========
+
+/**
+ * Render overview data as cards for mobile view
+ */
+function renderOverviewCards() {
+    const data = state.overviewData;
+    if (!data || !data.subsets || data.subsets.length === 0) {
+        return '';
+    }
+    
+    const { subsets: rawSubsets, models, data: subsetData, subset_info } = data;
+    
+    // Sort subsets: basic, reasoning, multiref first, then others alphabetically
+    const subsetOrder = ['basic', 'reasoning', 'multiref'];
+    const subsets = [...rawSubsets].sort((a, b) => {
+        const aIdx = subsetOrder.indexOf(a);
+        const bIdx = subsetOrder.indexOf(b);
+        if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+        if (aIdx !== -1) return -1;
+        if (bIdx !== -1) return 1;
+        return a.localeCompare(b);
+    });
+    
+    // Sort models based on current sort settings
+    const sortedModels = [...models].sort((a, b) => {
+        let valA, valB;
+        
+        if (state.overviewSortColumn === 'model') {
+            valA = a.toLowerCase();
+            valB = b.toLowerCase();
+            return state.overviewSortDirection === 'asc' 
+                ? valA.localeCompare(valB) 
+                : valB.localeCompare(valA);
+        } else {
+            // Sort by specific subset
+            const subset = state.overviewSortColumn;
+            valA = subsetData[subset]?.[a]?.elo ?? null;
+            valB = subsetData[subset]?.[b]?.elo ?? null;
+        }
+        
+        // Handle null values (put them at the end)
+        if (valA === null && valB === null) return 0;
+        if (valA === null) return 1;
+        if (valB === null) return -1;
+        
+        return state.overviewSortDirection === 'asc' ? valA - valB : valB - valA;
+    });
+    
+    // Build cards HTML
+    const cardsHtml = sortedModels.map((model, idx) => {
+        // Build subset items
+        const subsetItems = subsets.map(subset => {
+            const modelData = subsetData[subset]?.[model];
+            const elo = modelData ? Math.round(modelData.elo) : null;
+            const rank = modelData?.rank;
+            
+            return `
+                <div class="overview-subset-item">
+                    <span class="overview-subset-name">${escapeHtml(subset)}</span>
+                    <span class="overview-subset-elo ${elo === null ? 'no-data' : ''}">${elo !== null ? elo : '-'}${rank ? ` (#${rank})` : ''}</span>
+                </div>
+            `;
+        }).join('');
+        
+        // Rank badge for top 3
+        let rankBadge = '';
+        if (idx < 3 && state.overviewSortColumn !== 'model' && state.overviewSortDirection === 'desc') {
+            rankBadge = `<span class="rank-badge rank-${idx + 1}">${idx + 1}</span>`;
+        }
+        
+        return `
+            <div class="overview-model-card" data-model="${escapeHtml(model)}">
+                <div class="overview-model-card-header">
+                    <span class="overview-model-name">${rankBadge}${escapeHtml(getModelDisplayName(model))}</span>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="overview-model-card-content">
+                    ${subsetItems}
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    return cardsHtml;
+}
+
+/**
+ * Update overview table to include mobile cards container
+ */
+function renderOverviewTableWithCards() {
+    const data = state.overviewData;
+    if (!data || !data.subsets || data.subsets.length === 0) {
+        elements.overviewContent.innerHTML = '<div class="empty-state"><p>No subset data available</p></div>';
+        return;
+    }
+    
+    // Call original table render
+    renderOverviewTable();
+    
+    // Add cards container for mobile
+    const cardsHtml = renderOverviewCards();
+    const cardsContainer = document.createElement('div');
+    cardsContainer.className = 'overview-cards-container';
+    cardsContainer.innerHTML = cardsHtml;
+    elements.overviewContent.appendChild(cardsContainer);
+    
+    // Add click handlers for card expansion
+    cardsContainer.querySelectorAll('.overview-model-card-header').forEach(header => {
+        header.addEventListener('click', () => {
+            header.parentElement.classList.toggle('expanded');
+        });
+    });
+    
+    // Add click handlers for model names in cards
+    cardsContainer.querySelectorAll('.overview-model-card').forEach(card => {
+        const modelName = card.dataset.model;
+        card.querySelector('.overview-model-name').addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Show model stats for the first subset that has this model
+            const subsets = data.subsets;
+            const subsetWithModel = subsets.find(s => data.data[s]?.[modelName]);
+            if (subsetWithModel) {
+                state.subset = subsetWithModel;
+                loadModelStats(modelName);
+            }
+        });
+    });
+}
+
+// Override the original renderOverviewTable to include cards
+const originalRenderOverviewTable = renderOverviewTable;
+renderOverviewTable = function() {
+    originalRenderOverviewTable();
+    
+    // Add cards container for mobile if it doesn't exist
+    if (!elements.overviewContent.querySelector('.overview-cards-container')) {
+        const cardsHtml = renderOverviewCards();
+        if (cardsHtml) {
+            const cardsContainer = document.createElement('div');
+            cardsContainer.className = 'overview-cards-container';
+            cardsContainer.innerHTML = cardsHtml;
+            elements.overviewContent.appendChild(cardsContainer);
+            
+            // Add click handlers for card expansion
+            cardsContainer.querySelectorAll('.overview-model-card-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    header.parentElement.classList.toggle('expanded');
+                });
+            });
+            
+            // Add click handlers for model names in cards
+            const data = state.overviewData;
+            cardsContainer.querySelectorAll('.overview-model-card').forEach(card => {
+                const modelName = card.dataset.model;
+                card.querySelector('.overview-model-name').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const subsets = data.subsets;
+                    const subsetWithModel = subsets.find(s => data.data[s]?.[modelName]);
+                    if (subsetWithModel) {
+                        state.subset = subsetWithModel;
+                        loadModelStats(modelName);
+                    }
+                });
+            });
+        }
+    }
+};
+
 // ========== Initialize ==========
 loadFavoritesFromStorage();
 
