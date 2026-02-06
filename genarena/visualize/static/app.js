@@ -3719,13 +3719,22 @@ if (elements.calculateMergedElo) {
 
 // Navigation event handlers
 if (elements.logoLink) {
-    elements.logoLink.addEventListener('click', () => switchToPage('overview'));
+    elements.logoLink.addEventListener('click', () => {
+        if (typeof closeMobileMenu === 'function') closeMobileMenu();
+        switchToPage('overview');
+    });
 }
 if (elements.navOverview) {
-    elements.navOverview.addEventListener('click', () => switchToPage('overview'));
+    elements.navOverview.addEventListener('click', () => {
+        if (typeof closeMobileMenu === 'function') closeMobileMenu();
+        switchToPage('overview');
+    });
 }
 if (elements.navGallery) {
-    elements.navGallery.addEventListener('click', () => switchToPage('gallery'));
+    elements.navGallery.addEventListener('click', () => {
+        if (typeof closeMobileMenu === 'function') closeMobileMenu();
+        switchToPage('gallery');
+    });
 }
 
 // Cross-Subset modal
@@ -3834,16 +3843,8 @@ if (mobileElements.mobileMenuOverlay) {
     mobileElements.mobileMenuOverlay.addEventListener('click', closeMobileMenu);
 }
 
-// Close mobile menu when clicking a nav link
-if (mobileElements.headerNav) {
-    mobileElements.headerNav.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', () => {
-            if (isMobileViewport()) {
-                closeMobileMenu();
-            }
-        });
-    });
-}
+// Note: Mobile menu closing is handled in the navigation click handlers below
+// We don't add separate listeners here to avoid conflicts
 
 // Sidebar toggle event listeners
 if (mobileElements.sidebarToggle) {
@@ -3874,6 +3875,16 @@ function renderOverviewCards() {
     
     const { subsets: rawSubsets, models, data: subsetData, subset_info } = data;
     
+    // Check if models exist
+    if (!models || models.length === 0) {
+        return '';
+    }
+    
+    // Check if subsetData exists
+    if (!subsetData) {
+        return '';
+    }
+    
     // Sort subsets: basic, reasoning, multiref first, then others alphabetically
     const subsetOrder = ['basic', 'reasoning', 'multiref'];
     const subsets = [...rawSubsets].sort((a, b) => {
@@ -3890,16 +3901,16 @@ function renderOverviewCards() {
         let valA, valB;
         
         if (state.overviewSortColumn === 'model') {
-            valA = a.toLowerCase();
-            valB = b.toLowerCase();
+            valA = (a || '').toLowerCase();
+            valB = (b || '').toLowerCase();
             return state.overviewSortDirection === 'asc' 
                 ? valA.localeCompare(valB) 
                 : valB.localeCompare(valA);
         } else {
             // Sort by specific subset
             const subset = state.overviewSortColumn;
-            valA = subsetData[subset]?.[a]?.elo ?? null;
-            valB = subsetData[subset]?.[b]?.elo ?? null;
+            valA = subsetData?.[subset]?.[a]?.elo ?? null;
+            valB = subsetData?.[subset]?.[b]?.elo ?? null;
         }
         
         // Handle null values (put them at the end)
@@ -3914,13 +3925,13 @@ function renderOverviewCards() {
     const cardsHtml = sortedModels.map((model, idx) => {
         // Build subset items
         const subsetItems = subsets.map(subset => {
-            const modelData = subsetData[subset]?.[model];
+            const modelData = subsetData?.[subset]?.[model];
             const elo = modelData ? Math.round(modelData.elo) : null;
             const rank = modelData?.rank;
             
             return `
                 <div class="overview-subset-item">
-                    <span class="overview-subset-name">${escapeHtml(subset)}</span>
+                    <span class="overview-subset-name">${escapeHtml(subset || '')}</span>
                     <span class="overview-subset-elo ${elo === null ? 'no-data' : ''}">${elo !== null ? elo : '-'}${rank ? ` (#${rank})` : ''}</span>
                 </div>
             `;
