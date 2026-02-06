@@ -2396,13 +2396,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Truncate text in the middle with ellipsis
-function truncateMiddle(text, maxLen = 10) {
-    if (!text || text.length <= maxLen) return text;
-    const half = Math.floor((maxLen - 2) / 2);
-    return text.slice(0, half) + '..' + text.slice(-half);
-}
-
 // ========== Event Handlers ==========
 elements.subsetSelect.addEventListener('change', (e) => {
     state.subset = e.target.value || null;
