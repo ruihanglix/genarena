@@ -366,22 +366,11 @@ function renderOverviewTable() {
         return a.localeCompare(b);
     });
     
-    // Sort models based on current sort settings
+    // Sort models based on current sort settings (by subset ELO)
     const sortedModels = [...models].sort((a, b) => {
-        let valA, valB;
-        
-        if (state.overviewSortColumn === 'model') {
-            valA = a.toLowerCase();
-            valB = b.toLowerCase();
-            return state.overviewSortDirection === 'asc' 
-                ? valA.localeCompare(valB) 
-                : valB.localeCompare(valA);
-        } else {
-            // Sort by specific subset
-            const subset = state.overviewSortColumn;
-            valA = subsetData[subset]?.[a]?.elo ?? null;
-            valB = subsetData[subset]?.[b]?.elo ?? null;
-        }
+        const subset = state.overviewSortColumn;
+        const valA = subsetData[subset]?.[a]?.elo ?? null;
+        const valB = subsetData[subset]?.[b]?.elo ?? null;
         
         // Handle null values (put them at the end)
         if (valA === null && valB === null) return 0;
@@ -398,8 +387,7 @@ function renderOverviewTable() {
     };
     
     let headerHtml = `
-        <th class="model-header sortable ${state.overviewSortColumn === 'model' ? 'sorted-' + state.overviewSortDirection : ''}" 
-            data-sort="model">Model${sortIcon('model')}</th>
+        <th class="model-header">Model</th>
     `;
     
     subsets.forEach(subset => {
@@ -409,7 +397,7 @@ function renderOverviewTable() {
                 data-sort="${escapeHtml(subset)}" 
                 data-subset="${escapeHtml(subset)}"
                 title="Click to view ${subset} leaderboard">
-                ${escapeHtml(subset)}
+                ${escapeHtml(subset)}${sortIcon(subset)}
                 <span class="subset-header-info">${info.model_count || 0} models</span>
             </th>
         `;
@@ -423,8 +411,8 @@ function renderOverviewTable() {
         const truncatedName = truncateMiddle(displayName, maxLen);
         let rowHtml = `<td class="model-cell" data-model="${escapeHtml(model)}" title="${escapeHtml(displayName)}">`;
         
-        // Add rank badge for top 3 when sorting by a subset column
-        if (idx < 3 && state.overviewSortColumn !== 'model' && state.overviewSortDirection === 'desc') {
+        // Add rank badge for top 3 when sorting descending
+        if (idx < 3 && state.overviewSortDirection === 'desc') {
             rowHtml += `<span class="rank-badge rank-${idx + 1}">${idx + 1}</span>`;
         }
         rowHtml += `${escapeHtml(truncatedName)}</td>`;
