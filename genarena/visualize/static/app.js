@@ -3725,15 +3725,25 @@ if (elements.logoLink) {
     });
 }
 if (elements.navOverview) {
-    elements.navOverview.addEventListener('click', () => {
-        if (typeof closeMobileMenu === 'function') closeMobileMenu();
+    elements.navOverview.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // First switch page, then close menu (with small delay for visual feedback)
         switchToPage('overview');
+        setTimeout(() => {
+            if (typeof closeMobileMenu === 'function') closeMobileMenu();
+        }, 50);
     });
 }
 if (elements.navGallery) {
-    elements.navGallery.addEventListener('click', () => {
-        if (typeof closeMobileMenu === 'function') closeMobileMenu();
+    elements.navGallery.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // First switch page, then close menu (with small delay for visual feedback)
         switchToPage('gallery');
+        setTimeout(() => {
+            if (typeof closeMobileMenu === 'function') closeMobileMenu();
+        }, 50);
     });
 }
 

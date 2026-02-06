@@ -4164,6 +4164,11 @@ body {
     background: var(--bg-hover);
 }
 
+/* Overview Cards Container - hidden by default, shown on mobile */
+.overview-cards-container {
+    display: none;
+}
+
 /* ========== Responsive Adjustments ========== */
 @media (max-width: 1200px) {
     .full-page {
@@ -4670,9 +4675,7 @@ body {
 }
 
 /* ========== Overview Cards (Mobile View) ========== */
-.overview-cards-container {
-    display: none;
-}
+/* Note: .overview-cards-container display is controlled by media queries */
 
 .overview-model-card {
     background: var(--bg-secondary);
