@@ -84,6 +84,49 @@ function getModelLink(modelName) {
     return null;
 }
 
+/**
+ * Truncate string keeping start and end, ellipsis in middle
+ * @param {string} str - String to truncate
+ * @param {number} maxLen - Maximum length (0 = no truncation)
+ * @returns {string} Truncated string
+ */
+function truncateMiddle(str, maxLen) {
+    if (maxLen <= 0 || str.length <= maxLen) return str;
+    const ellipsis = '...';
+    const charsToShow = maxLen - ellipsis.length;
+    const frontChars = Math.ceil(charsToShow / 2);
+    const backChars = Math.floor(charsToShow / 2);
+    return str.slice(0, frontChars) + ellipsis + str.slice(-backChars);
+}
+
+/**
+ * Get model name max length from CSS variable
+ * @returns {number} Max length (0 = no truncation)
+ */
+function getModelNameMaxLen() {
+    const value = getComputedStyle(document.documentElement)
+        .getPropertyValue('--model-name-max-len').trim();
+    return parseInt(value, 10) || 0;
+}
+
+/**
+ * Debounce function
+ * @param {Function} func - Function to debounce
+ * @param {number} wait - Wait time in milliseconds
+ * @returns {Function} Debounced function
+ */
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 // ========== DOM Elements ==========
 const elements = {
     // Navigation elements
@@ -369,15 +412,18 @@ function renderOverviewTable() {
     });
     
     // Build table body
+    const maxLen = getModelNameMaxLen();
     let bodyHtml = '';
     sortedModels.forEach((model, idx) => {
-        let rowHtml = `<td class="model-cell" data-model="${escapeHtml(model)}" title="View ${getModelDisplayName(model)} stats">`;
+        const displayName = getModelDisplayName(model);
+        const truncatedName = truncateMiddle(displayName, maxLen);
+        let rowHtml = `<td class="model-cell" data-model="${escapeHtml(model)}" title="${escapeHtml(displayName)}">`;
         
         // Add rank badge for top 3 when sorting by a subset column
         if (idx < 3 && state.overviewSortColumn !== 'model' && state.overviewSortDirection === 'desc') {
             rowHtml += `<span class="rank-badge rank-${idx + 1}">${idx + 1}</span>`;
         }
-        rowHtml += `${escapeHtml(getModelDisplayName(model))}</td>`;
+        rowHtml += `${escapeHtml(truncatedName)}</td>`;
         
         // Add ELO for each subset
         subsets.forEach(subset => {
@@ -3872,195 +3918,14 @@ if (mobileElements.sidebarClose) {
 // Handle window resize
 window.addEventListener('resize', handleResize);
 
-// ========== Overview Cards (Mobile View) ==========
+// Debounced overview re-render on resize (for model name truncation)
+const debouncedOverviewRerender = debounce(() => {
+    if (state.currentPage === 'overview' && state.overviewData) {
+        renderOverviewTable();
+    }
+}, 250);
 
-/**
- * Render overview data as cards for mobile view
- */
-function renderOverviewCards() {
-    const data = state.overviewData;
-    if (!data || !data.subsets || data.subsets.length === 0) {
-        return '';
-    }
-    
-    const { subsets: rawSubsets, models, data: subsetData, subset_info } = data;
-    
-    // Check if models exist
-    if (!models || models.length === 0) {
-        return '';
-    }
-    
-    // Check if subsetData exists
-    if (!subsetData) {
-        return '';
-    }
-    
-    // Sort subsets: basic, reasoning, multiref first, then others alphabetically
-    const subsetOrder = ['basic', 'reasoning', 'multiref'];
-    const subsets = [...rawSubsets].sort((a, b) => {
-        const aIdx = subsetOrder.indexOf(a);
-        const bIdx = subsetOrder.indexOf(b);
-        if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
-        if (aIdx !== -1) return -1;
-        if (bIdx !== -1) return 1;
-        return a.localeCompare(b);
-    });
-    
-    // Sort models based on current sort settings
-    const sortedModels = [...models].sort((a, b) => {
-        let valA, valB;
-        
-        if (state.overviewSortColumn === 'model') {
-            valA = (a || '').toLowerCase();
-            valB = (b || '').toLowerCase();
-            return state.overviewSortDirection === 'asc' 
-                ? valA.localeCompare(valB) 
-                : valB.localeCompare(valA);
-        } else {
-            // Sort by specific subset
-            const subset = state.overviewSortColumn;
-            valA = subsetData?.[subset]?.[a]?.elo ?? null;
-            valB = subsetData?.[subset]?.[b]?.elo ?? null;
-        }
-        
-        // Handle null values (put them at the end)
-        if (valA === null && valB === null) return 0;
-        if (valA === null) return 1;
-        if (valB === null) return -1;
-        
-        return state.overviewSortDirection === 'asc' ? valA - valB : valB - valA;
-    });
-    
-    // Build cards HTML
-    const cardsHtml = sortedModels.map((model, idx) => {
-        // Build subset items
-        const subsetItems = subsets.map(subset => {
-            const modelData = subsetData?.[subset]?.[model];
-            const elo = modelData ? Math.round(modelData.elo) : null;
-            const rank = modelData?.rank;
-            
-            return `
-                <div class="overview-subset-item">
-                    <span class="overview-subset-name">${escapeHtml(subset || '')}</span>
-                    <span class="overview-subset-elo ${elo === null ? 'no-data' : ''}">${elo !== null ? elo : '-'}${rank ? ` (#${rank})` : ''}</span>
-                </div>
-            `;
-        }).join('');
-        
-        // Rank badge for top 3
-        let rankBadge = '';
-        if (idx < 3 && state.overviewSortColumn !== 'model' && state.overviewSortDirection === 'desc') {
-            rankBadge = `<span class="rank-badge rank-${idx + 1}">${idx + 1}</span>`;
-        }
-        
-        return `
-            <div class="overview-model-card" data-model="${escapeHtml(model)}">
-                <div class="overview-model-card-header">
-                    <span class="overview-model-name">${rankBadge}${escapeHtml(getModelDisplayName(model))}</span>
-                    <span class="expand-icon">▼</span>
-                </div>
-                <div class="overview-model-card-content">
-                    ${subsetItems}
-                </div>
-            </div>
-        `;
-    }).join('');
-    
-    return cardsHtml;
-}
-
-/**
- * Update overview table to include mobile cards container
- */
-function renderOverviewTableWithCards() {
-    const data = state.overviewData;
-    if (!data || !data.subsets || data.subsets.length === 0) {
-        elements.overviewContent.innerHTML = '<div class="empty-state"><p>No subset data available</p></div>';
-        return;
-    }
-    
-    // Call original table render
-    renderOverviewTable();
-    
-    // Add cards container for mobile
-    const cardsHtml = renderOverviewCards();
-    const cardsContainer = document.createElement('div');
-    cardsContainer.className = 'overview-cards-container';
-    cardsContainer.innerHTML = cardsHtml;
-    elements.overviewContent.appendChild(cardsContainer);
-    
-    // Add click handlers for card expansion
-    cardsContainer.querySelectorAll('.overview-model-card-header').forEach(header => {
-        header.addEventListener('click', () => {
-            header.parentElement.classList.toggle('expanded');
-        });
-    });
-    
-    // Add click handlers for model names in cards
-    cardsContainer.querySelectorAll('.overview-model-card').forEach(card => {
-        const modelName = card.dataset.model;
-        card.querySelector('.overview-model-name').addEventListener('click', (e) => {
-            e.stopPropagation();
-            // Show model stats for the first subset that has this model
-            const subsets = data.subsets;
-            const subsetWithModel = subsets.find(s => data.data[s]?.[modelName]);
-            if (subsetWithModel) {
-                state.subset = subsetWithModel;
-                loadModelStats(modelName);
-            }
-        });
-    });
-}
-
-// Note: Mobile cards are added via addMobileCardsToOverview() called after renderOverviewTable()
-
-/**
- * Add mobile cards to overview after table is rendered
- */
-function addMobileCardsToOverview() {
-    if (!elements.overviewContent) return;
-    
-    // Remove existing cards container if any
-    const existingCards = elements.overviewContent.querySelector('.overview-cards-container');
-    if (existingCards) {
-        existingCards.remove();
-    }
-    
-    const cardsHtml = renderOverviewCards();
-    if (cardsHtml) {
-        const cardsContainer = document.createElement('div');
-        cardsContainer.className = 'overview-cards-container';
-        cardsContainer.innerHTML = cardsHtml;
-        elements.overviewContent.appendChild(cardsContainer);
-        
-        // Add click handlers for card expansion
-        cardsContainer.querySelectorAll('.overview-model-card-header').forEach(header => {
-            header.addEventListener('click', () => {
-                header.parentElement.classList.toggle('expanded');
-            });
-        });
-        
-        // Add click handlers for model names in cards
-        const data = state.overviewData;
-        if (data) {
-            cardsContainer.querySelectorAll('.overview-model-card').forEach(card => {
-                const modelName = card.dataset.model;
-                const nameEl = card.querySelector('.overview-model-name');
-                if (nameEl) {
-                    nameEl.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const subsets = data.subsets;
-                        const subsetWithModel = subsets.find(s => data.data[s]?.[modelName]);
-                        if (subsetWithModel) {
-                            state.subset = subsetWithModel;
-                            loadModelStats(modelName);
-                        }
-                    });
-                }
-            });
-        }
-    }
-}
+window.addEventListener('resize', debouncedOverviewRerender);
 
 // ========== Initialize ==========
 loadFavoritesFromStorage();
