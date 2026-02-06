@@ -4081,13 +4081,12 @@ body {
     background: rgba(0, 0, 0, 0.6);
     z-index: 150;
     opacity: 0;
-    pointer-events: none;
     transition: opacity 0.3s ease;
 }
 
 .mobile-menu-overlay.active {
+    display: block;
     opacity: 1;
-    pointer-events: auto;
 }
 
 /* ========== Sidebar Toggle Button (Mobile) ========== */
@@ -4133,13 +4132,12 @@ body {
     background: rgba(0, 0, 0, 0.6);
     z-index: 199;
     opacity: 0;
-    pointer-events: none;
     transition: opacity 0.3s ease;
 }
 
 .sidebar-overlay.active {
+    display: block;
     opacity: 1;
-    pointer-events: auto;
 }
 
 /* Sidebar Close Button (Mobile) */
@@ -4266,10 +4264,6 @@ body {
         color: var(--text-muted);
     }
     
-    .mobile-menu-overlay {
-        display: block;
-    }
-    
     .logo {
         font-size: 1.125rem;
     }
@@ -4308,10 +4302,6 @@ body {
     .sidebar-toggle {
         display: flex;
         align-items: center;
-    }
-    
-    .sidebar-overlay {
-        display: block;
     }
     
     /* Gallery Controls */
