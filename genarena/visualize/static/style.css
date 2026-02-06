@@ -2467,57 +2467,6 @@ body {
     color: var(--accent-yellow);
 }
 
-/* ========== Responsive ========== */
-@media (max-width: 1024px) {
-    .sidebar {
-        width: 240px;
-    }
-
-    .battle-images {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .detail-images {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 768px) {
-    .header {
-        flex-direction: column;
-        gap: 12px;
-        padding: 12px 16px;
-    }
-
-    .header-center {
-        flex-direction: column;
-        width: 100%;
-    }
-
-    .selector-group {
-        width: 100%;
-    }
-
-    .selector {
-        flex: 1;
-    }
-
-    .main-container {
-        flex-direction: column;
-    }
-
-    .sidebar {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .battle-images,
-    .detail-images {
-        grid-template-columns: 1fr;
-    }
-}
-
 /* ========== Opponent Sections (Collapsible) ========== */
 .model-battles-hint {
     font-size: 0.75rem;
@@ -4132,11 +4081,13 @@ body {
     background: rgba(0, 0, 0, 0.6);
     z-index: 150;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.3s ease;
 }
 
 .mobile-menu-overlay.active {
     opacity: 1;
+    pointer-events: auto;
 }
 
 /* ========== Sidebar Toggle Button (Mobile) ========== */
@@ -4182,11 +4133,13 @@ body {
     background: rgba(0, 0, 0, 0.6);
     z-index: 199;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.3s ease;
 }
 
 .sidebar-overlay.active {
     opacity: 1;
+    pointer-events: auto;
 }
 
 /* ========== Responsive Adjustments ========== */

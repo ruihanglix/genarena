@@ -431,6 +431,11 @@ function renderOverviewTable() {
             }
         });
     });
+    
+    // Add mobile cards view
+    if (typeof addMobileCardsToOverview === 'function') {
+        addMobileCardsToOverview();
+    }
 }
 
 // ========== Cross-Subset Modal Functions ==========
@@ -3975,44 +3980,55 @@ function renderOverviewTableWithCards() {
     });
 }
 
-// Override the original renderOverviewTable to include cards
-const originalRenderOverviewTable = renderOverviewTable;
-renderOverviewTable = function() {
-    originalRenderOverviewTable();
+// Note: Mobile cards are added via addMobileCardsToOverview() called after renderOverviewTable()
+
+/**
+ * Add mobile cards to overview after table is rendered
+ */
+function addMobileCardsToOverview() {
+    if (!elements.overviewContent) return;
     
-    // Add cards container for mobile if it doesn't exist
-    if (!elements.overviewContent.querySelector('.overview-cards-container')) {
-        const cardsHtml = renderOverviewCards();
-        if (cardsHtml) {
-            const cardsContainer = document.createElement('div');
-            cardsContainer.className = 'overview-cards-container';
-            cardsContainer.innerHTML = cardsHtml;
-            elements.overviewContent.appendChild(cardsContainer);
-            
-            // Add click handlers for card expansion
-            cardsContainer.querySelectorAll('.overview-model-card-header').forEach(header => {
-                header.addEventListener('click', () => {
-                    header.parentElement.classList.toggle('expanded');
-                });
+    // Remove existing cards container if any
+    const existingCards = elements.overviewContent.querySelector('.overview-cards-container');
+    if (existingCards) {
+        existingCards.remove();
+    }
+    
+    const cardsHtml = renderOverviewCards();
+    if (cardsHtml) {
+        const cardsContainer = document.createElement('div');
+        cardsContainer.className = 'overview-cards-container';
+        cardsContainer.innerHTML = cardsHtml;
+        elements.overviewContent.appendChild(cardsContainer);
+        
+        // Add click handlers for card expansion
+        cardsContainer.querySelectorAll('.overview-model-card-header').forEach(header => {
+            header.addEventListener('click', () => {
+                header.parentElement.classList.toggle('expanded');
             });
-            
-            // Add click handlers for model names in cards
-            const data = state.overviewData;
+        });
+        
+        // Add click handlers for model names in cards
+        const data = state.overviewData;
+        if (data) {
             cardsContainer.querySelectorAll('.overview-model-card').forEach(card => {
                 const modelName = card.dataset.model;
-                card.querySelector('.overview-model-name').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const subsets = data.subsets;
-                    const subsetWithModel = subsets.find(s => data.data[s]?.[modelName]);
-                    if (subsetWithModel) {
-                        state.subset = subsetWithModel;
-                        loadModelStats(modelName);
-                    }
-                });
+                const nameEl = card.querySelector('.overview-model-name');
+                if (nameEl) {
+                    nameEl.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const subsets = data.subsets;
+                        const subsetWithModel = subsets.find(s => data.data[s]?.[modelName]);
+                        if (subsetWithModel) {
+                            state.subset = subsetWithModel;
+                            loadModelStats(modelName);
+                        }
+                    });
+                }
             });
         }
     }
-};
+}
 
 // ========== Initialize ==========
 loadFavoritesFromStorage();
