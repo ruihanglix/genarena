@@ -50,15 +50,11 @@
 
             <!-- Gallery Page (with sidebar) -->
             <div id="gallery-page" class="gallery-page-container" style="display: none;">
-                <!-- Mobile Sidebar Toggle -->
-                <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle filters">
-                    <span class="filter-icon">☰</span>
-                    <span class="filter-text">Filters</span>
-                </button>
                 <!-- Sidebar Overlay for Mobile -->
                 <div id="sidebar-overlay" class="sidebar-overlay"></div>
                 <!-- Sidebar Filters -->
                 <aside class="sidebar" id="sidebar">
+                <button id="sidebar-close" class="sidebar-close" aria-label="Close filters">&times;</button>
                 <div class="filter-section">
                     <h3>Filters</h3>
 
@@ -244,6 +240,12 @@
             </main>
             </div> <!-- End of gallery-page -->
         </div>
+
+        <!-- Mobile Sidebar Toggle (outside gallery-page for fixed positioning) -->
+        <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle filters">
+            <span class="filter-icon">☰</span>
+            <span class="filter-text">Filters</span>
+        </button>
 
         <!-- Detail Modal -->
         <div id="detail-modal" class="modal hidden">

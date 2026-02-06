@@ -4142,6 +4142,28 @@ body {
     pointer-events: auto;
 }
 
+/* Sidebar Close Button (Mobile) */
+.sidebar-close {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.sidebar-close:hover {
+    background: var(--bg-hover);
+}
+
 /* ========== Responsive Adjustments ========== */
 @media (max-width: 1200px) {
     .full-page {
@@ -4265,11 +4287,17 @@ body {
         transition: transform 0.3s ease;
         border-right: 1px solid var(--border-color);
         overflow-y: auto;
-        padding-top: 20px;
+        padding: 20px;
+        background: var(--bg-secondary);
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
     }
     
     .sidebar.active {
         transform: translateX(0);
+    }
+    
+    .sidebar-close {
+        display: block;
     }
     
     .sidebar-toggle {

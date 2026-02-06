@@ -254,6 +254,12 @@ function switchToPage(page) {
         elements.galleryPage.style.display = page === 'gallery' ? 'flex' : 'none';
     }
     
+    // Show/hide mobile sidebar toggle button
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    if (sidebarToggle) {
+        sidebarToggle.style.display = page === 'gallery' ? '' : 'none';
+    }
+    
     // Load page-specific data
     if (page === 'overview') {
         loadOverviewLeaderboards();
@@ -3757,6 +3763,7 @@ const mobileElements = {
     sidebarToggle: document.getElementById('sidebar-toggle'),
     sidebarOverlay: document.getElementById('sidebar-overlay'),
     sidebar: document.getElementById('sidebar'),
+    sidebarClose: document.getElementById('sidebar-close'),
 };
 
 /**
@@ -3845,6 +3852,10 @@ if (mobileElements.sidebarToggle) {
 
 if (mobileElements.sidebarOverlay) {
     mobileElements.sidebarOverlay.addEventListener('click', closeSidebar);
+}
+
+if (mobileElements.sidebarClose) {
+    mobileElements.sidebarClose.addEventListener('click', closeSidebar);
 }
 
 // Handle window resize
