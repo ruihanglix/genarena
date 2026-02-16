@@ -146,14 +146,11 @@ The workflow will be:
 ## Citation
 
 ```bibtex
-@misc{li2026genarenaachievehumanalignedevaluation,
-      title={GenArena: How Can We Achieve Human-Aligned Evaluation for Visual Generation Tasks?},
-      author={Ruihang Li and Leigang Qu and Jingxu Zhang and Dongnan Gui and Mengde Xu and Xiaosong Zhang and Han Hu and Wenjie Wang and Jiaqi Wang},
-      year={2026},
-      eprint={2602.06013},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      url={https://arxiv.org/abs/2602.06013},
+@article{li2026genarena,
+  title={GenArena: How Can We Achieve Human-Aligned Evaluation for Visual Generation Tasks?},
+  author={Li, Ruihang and Qu, Leigang and Zhang, Jingxu and Gui, Dongnan and Xu, Mengde and Zhang, Xiaosong and Hu, Han and Wang, Wenjie and Wang, Jiaqi},
+  journal={arXiv preprint arXiv:2602.06013},
+  year={2026}
 }
 ```
 
