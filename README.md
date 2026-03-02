@@ -125,12 +125,24 @@ GenArena automatically detects new models and schedules battles against existing
 
 ## Submit to Official Leaderboard
 
-> **Coming Soon**: The `genarena submit` command will allow you to submit your evaluation results to the official GenArena leaderboard via GitHub PR.
+Submit your evaluation results to the official leaderboard:
 
-The workflow will be:
-1. Run evaluation locally with `genarena run`
-2. Upload results to your HuggingFace repository
-3. Submit via `genarena submit` which creates a PR for review
+```bash
+genarena submit \
+    --arena_dir ./arena \
+    --subset basic \
+    --exp_name yourname_YourModel_20260205 \
+    --hf_repo your-username/your-genarena-results
+```
+
+This command will:
+1. Validate your local data (format, completeness, new models)
+2. Upload model outputs and battle logs to your HuggingFace repository
+3. Create a PR to [genarena/submissions](https://github.com/genarena/submissions)
+
+After the PR is created, a CI bot automatically validates the submission. Once a maintainer merges the PR, the data is integrated into the official leaderboard.
+
+Use `--dry-run` to validate without uploading or creating a PR.
 
 ## Documentation
 
