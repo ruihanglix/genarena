@@ -1,0 +1,73 @@
+name: Integrate Submission
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'submissions/pending/*.json'
+
+# Serialize integration runs to prevent race conditions on state.json
+concurrency:
+  group: integrate-submission
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install genarena huggingface_hub
+
+      - name: Get added submission files
+        id: changed
+        uses: tj-actions/changed-files@v44
+        with:
+          files: 'submissions/pending/*.json'
+          # Only newly added files trigger integration;
+          # deletions (from move to approved/) are ignored.
+
+      - name: Integrate submissions
+        if: steps.changed.outputs.added_files != ''
+        id: integrate
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python scripts/integrate_submission.py \
+            --files "${{ steps.changed.outputs.added_files }}" \
+            --official-models official_models.json \
+            --battlefield-repo rhli/genarena-battlefield \
+            --leaderboard-repo genarena/leaderboard-data \
+            --output integration_result.json
+
+      - name: Commit changes
+        if: steps.changed.outputs.added_files != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add submissions/ official_models.json
+          git diff --cached --quiet || git commit -m "Integrate submissions and update official models"
+          git push
+
+      - name: Report failure
+        if: failure() && steps.integrate.outcome == 'failure'
+        run: |
+          echo "Integration failed. Check integration_result.json for details."
+          if [ -f integration_result.json ]; then
+            cat integration_result.json
+          fi

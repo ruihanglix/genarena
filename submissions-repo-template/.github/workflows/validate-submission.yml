@@ -1,0 +1,134 @@
+name: Validate Submission
+
+on:
+  pull_request:
+    paths:
+      - 'submissions/pending/*.json'
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install genarena huggingface_hub
+
+      - name: Get changed files
+        id: changed
+        uses: tj-actions/changed-files@v44
+        with:
+          files: 'submissions/pending/*.json'
+
+      - name: Validate submissions
+        id: validate
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python scripts/validate_submission.py \
+            --files "${{ steps.changed.outputs.all_changed_files }}" \
+            --official-models official_models.json \
+            --output validation_result.json
+
+      - name: Post validation result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let result;
+            try {
+              result = JSON.parse(fs.readFileSync('validation_result.json', 'utf8'));
+            } catch (e) {
+              result = {
+                status: 'failed',
+                checks: [{name: 'Validation script', passed: false, error: 'Script failed to run'}],
+                errors: ['Validation script failed to produce output']
+              };
+            }
+            
+            let body = '## Submission Validation Report\n\n';
+            
+            if (result.status === 'success') {
+              body += '**Status:** :white_check_mark: All checks passed\n\n';
+            } else {
+              body += '**Status:** :x: Validation failed\n\n';
+            }
+            
+            if (result.exp_name) {
+              body += '### Summary\n';
+              body += `| Item | Value |\n|------|-------|\n`;
+              body += `| Submission ID | \`${result.submission_id || 'N/A'}\` |\n`;
+              body += `| Experiment | \`${result.exp_name}\` |\n`;
+              body += `| Subset | \`${result.subset}\` |\n`;
+              body += `| New Models | ${(result.new_models || []).map(m => '`' + m + '`').join(', ') || 'None'} |\n`;
+              body += `| Total Battles | ${(result.total_battles || 0).toLocaleString()} |\n\n`;
+            }
+            
+            body += '### Validation Checks\n';
+            for (const check of (result.checks || [])) {
+              const icon = check.passed ? ':white_check_mark:' : ':x:';
+              body += `- ${icon} ${check.name}`;
+              if (!check.passed && check.error) {
+                body += `: ${check.error}`;
+              }
+              body += '\n';
+            }
+            
+            if (result.elo_comparison && Object.keys(result.elo_comparison).length > 0) {
+              body += '\n### ELO Verification\n';
+              body += '| Model | Submitted | Recalculated | Diff |\n';
+              body += '|-------|-----------|--------------|------|\n';
+              for (const [model, data] of Object.entries(result.elo_comparison)) {
+                const diff = Math.abs(data.submitted - data.recalculated).toFixed(1);
+                const icon = diff <= 1.0 ? ':white_check_mark:' : ':x:';
+                body += `| ${model} | ${data.submitted.toFixed(1)} | ${data.recalculated.toFixed(1)} | ${icon} ${diff} |\n`;
+              }
+            }
+            
+            body += '\n---\n';
+            if (result.status === 'success') {
+              body += ':white_check_mark: This submission is ready for maintainer review.';
+            } else {
+              body += ':x: Please fix the issues above and update your submission.\n\n';
+              if (result.errors && result.errors.length > 0) {
+                body += '**Errors:**\n';
+                for (const err of result.errors) {
+                  body += `- ${err}\n`;
+                }
+              }
+            }
+            
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+
+      - name: Set check status
+        if: always()
+        run: |
+          if [ -f validation_result.json ]; then
+            STATUS=$(python -c "import json; print(json.load(open('validation_result.json'))['status'])")
+            if [ "$STATUS" = "failed" ]; then
+              echo "Validation failed"
+              exit 1
+            fi
+          else
+            echo "Validation result not found"
+            exit 1
+          fi

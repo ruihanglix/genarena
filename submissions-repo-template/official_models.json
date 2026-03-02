@@ -1,0 +1,84 @@
+{
+  "last_updated": "2026-02-04T14:35:38Z",
+  "description": "List of models currently on the official GenArena leaderboard",
+  "subsets": {
+    "basic": {
+      "models": [
+        "bagel",
+        "dreamomni2",
+        "emu35",
+        "flux1_kontext",
+        "flux2",
+        "flux2_klein_4b",
+        "flux2_klein_9b",
+        "flux2_pe",
+        "glm_image",
+        "gpt_image_1",
+        "gpt_image_1.5",
+        "hunyuanimage3_ins",
+        "hunyuanimage3_ins_distill",
+        "longcat_image_edit",
+        "nanobanana",
+        "qwen-image-edit",
+        "qwen-image-edit-2509",
+        "qwen-image-edit-2509_PE",
+        "qwen-image-edit-2511",
+        "qwen-image-edit-2511_PE",
+        "step1x_edit"
+      ],
+      "model_count": 21,
+      "total_battles": 404681
+    },
+    "multiref": {
+      "models": [
+        "bagel",
+        "dreamomni2",
+        "emu35",
+        "flux1_kontext",
+        "flux2",
+        "flux2_klein_4b",
+        "flux2_klein_9b",
+        "flux2_pe",
+        "glm_image",
+        "gpt_image_1",
+        "gpt_image_1.5",
+        "hunyuanimage3_ins",
+        "hunyuanimage3_ins_distill",
+        "nanobanana",
+        "qwen-image-edit-2509",
+        "qwen-image-edit-2509_PE",
+        "qwen-image-edit-2511",
+        "qwen-image-edit-2511_PE"
+      ],
+      "model_count": 18,
+      "total_battles": 380625
+    },
+    "reasoning": {
+      "models": [
+        "bagel",
+        "dreamomni2",
+        "emu35",
+        "flux1_kontext",
+        "flux2",
+        "flux2_klein_4b",
+        "flux2_klein_9b",
+        "flux2_pe",
+        "glm_image",
+        "gpt_image_1",
+        "gpt_image_1.5",
+        "hunyuanimage3_ins",
+        "hunyuanimage3_ins_distill",
+        "longcat_image_edit",
+        "nanobanana",
+        "qwen-image-edit",
+        "qwen-image-edit-2509",
+        "qwen-image-edit-2509_PE",
+        "qwen-image-edit-2511",
+        "qwen-image-edit-2511_PE",
+        "step1x_edit"
+      ],
+      "model_count": 21,
+      "total_battles": 340371
+    }
+  }
+}
