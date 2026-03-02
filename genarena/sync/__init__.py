@@ -58,6 +58,18 @@ from genarena.sync.init_ops import (
     init_arena,
 )
 
+from genarena.sync.integrator import (
+    integrate_submission,
+    download_submission_data,
+    upload_to_battlefield,
+    upload_to_leaderboard,
+    rebuild_and_upload_state,
+    update_official_models_file,
+    IntegrationResult,
+    DEFAULT_BATTLEFIELD_REPO,
+    DEFAULT_LEADERBOARD_REPO,
+)
+
 __all__ = [
     # Git operations
     "is_git_initialized",
@@ -102,4 +114,14 @@ __all__ = [
     "discover_repo_subsets",
     "download_benchmark_data",
     "init_arena",
+    # Integration operations
+    "integrate_submission",
+    "download_submission_data",
+    "upload_to_battlefield",
+    "upload_to_leaderboard",
+    "rebuild_and_upload_state",
+    "update_official_models_file",
+    "IntegrationResult",
+    "DEFAULT_BATTLEFIELD_REPO",
+    "DEFAULT_LEADERBOARD_REPO",
 ]
